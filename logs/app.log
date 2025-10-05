@@ -1,0 +1,8 @@
+2025-10-05 18:45:35,998 - __main__ - INFO - Starting Root CA Certificate Management Application with Authentication
+2025-10-05 18:45:36,005 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.18.0.2:5000
+2025-10-05 18:45:36,005 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-10-05 18:45:57,285 - werkzeug - INFO - 172.18.0.1 - - [05/Oct/2025 18:45:57] "[32mGET / HTTP/1.1[0m" 302 -
+2025-10-05 18:46:01,616 - werkzeug - INFO - 172.18.0.1 - - [05/Oct/2025 18:46:01] "[32mGET /status HTTP/1.1[0m" 302 -

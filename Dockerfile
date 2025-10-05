@@ -48,14 +48,20 @@ RUN mkdir -p /var/log/rootca \
     && chmod 755 /tmp/cert_processing \
     && chmod 755 /etc/mycerts
 
-# Copy Python packages from builder stage
-COPY --from=builder /root/.local /root/.local
-
 # Set working directory
 WORKDIR /app
 
+# Copy requirements first
+COPY requirements.txt ./
+
+# Install Python packages globally
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy Python packages from builder stage (backup)
+COPY --from=builder /root/.local /root/.local
+
 # Copy application files
-COPY app.py config.py manage_users.py requirements.txt ./
+COPY app.py config.py manage_users.py ./
 COPY templates/ ./templates/
 COPY sample.csr ./
 
@@ -71,6 +77,9 @@ if [ ! -f "/etc/mycerts/rootCA.key" ]; then\n\
     echo "WARNING: Root CA private key not found at /etc/mycerts/rootCA.key"\n\
     echo "Please mount your Root CA private key file to /etc/mycerts/rootCA.key"\n\
 fi\n\
+echo "Ensuring log file permissions..."\n\
+touch /var/log/rootca/app.log\n\
+chmod 666 /var/log/rootca/app.log\n\
 echo "Starting application..."\n\
 python3 app.py' > /app/start.sh && \
     chmod +x /app/start.sh
@@ -82,6 +91,9 @@ curl -f http://localhost:5000/status || exit 1' > /app/healthcheck.sh && \
 
 # Set permissions
 RUN chown -R appuser:appuser /app /var/log/rootca /tmp/csr_uploads /tmp/cert_processing
+
+# Create log file with proper permissions after chown
+RUN touch /var/log/rootca/app.log && chown appuser:appuser /var/log/rootca/app.log
 
 # Switch to application user
 USER appuser
