@@ -187,7 +187,7 @@ Log levels include INFO, WARNING, and ERROR for monitoring and debugging.
 3. **Directory Permissions**:
    ```bash
    # Ensure processing directories are writable
-   ls -ld /tmp/csr_uploads /tmp/cert_processing
+   ls -ld /tmp/csr_uploads /tmp/cert_processing /var/log/rootca
    ```
 
 4. **Port Already in Use**:
