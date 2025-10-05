@@ -54,14 +54,16 @@ docker-compose.yml
 
 # Documentation
 README.md
-*.md
+DOCKER.md
+# Allow other markdown files if needed
 
 # Scripts
 deploy.sh
 start.sh
 restart.sh
 test_setup.py
-manage_users.py
+# Allow manage_users.py for user management functionality
+!manage_users.py
 
 # Service files
 *.service
@@ -79,7 +81,8 @@ tmp/
 *.crt
 *.key
 *.pem
-*.csr
+# Allow sample.csr for testing purposes
+!sample.csr
 
 # Backup files
 *.bak
