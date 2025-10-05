@@ -1,0 +1,19 @@
+[Unit]
+Description=Root CA Certificate Management Web Application
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/compiler/cursorai/rootca
+Environment=PATH=/usr/bin:/usr/local/bin
+Environment=PYTHONPATH=/home/compiler/cursorai/rootca
+ExecStart=/usr/bin/python3 /home/compiler/cursorai/rootca/app.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+

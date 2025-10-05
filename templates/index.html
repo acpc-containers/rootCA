@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+
+{% block title %}Certificate Request - Root CA Management{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow card-hover">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    Request SSL Certificate
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card border-info">
+                            <div class="card-body text-center">
+                                <i class="fas fa-info-circle fa-2x text-info mb-3"></i>
+                                <h6>Certificate Details</h6>
+                                <p class="text-muted small mb-0">Valid for 365 days</p>
+                                <p class="text-muted small mb-0">SHA-256 signature</p>
+                                <p class="text-muted small mb-0">Includes SAN extension</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-success">
+                            <div class="card-body text-center">
+                                <i class="fas fa-download fa-2x text-success mb-3"></i>
+                                <h6>Download Package</h6>
+                                <p class="text-muted small mb-0">Server certificate</p>
+                                <p class="text-muted small mb-0">Root CA certificate</p>
+                                <p class="text-muted small mb-0">ZIP archive format</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <form action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data" id="certificateForm">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-4">
+                        {{ form.fqhn.label(class="form-label") }}
+                        {{ form.fqhn(class="form-control" + (" is-invalid" if form.fqhn.errors else "")) }}
+                        {% if form.fqhn.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.fqhn.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="fas fa-lightbulb me-1"></i>
+                            The domain will be automatically extracted from the FQHN for SAN extension
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        {{ form.csr_file.label(class="form-label") }}
+                        <div class="upload-area" id="uploadArea">
+                            <div id="uploadContent">
+                                <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                <h5>Drop your CSR file here</h5>
+                                <p class="text-muted">or click to browse</p>
+                                {{ form.csr_file(class="form-control d-none", id="file") }}
+                                <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('file').click()">
+                                    <i class="fas fa-folder-open me-2"></i>
+                                    Choose File
+                                </button>
+                            </div>
+                            <div id="fileInfo" class="d-none">
+                                <i class="fas fa-file-check fa-3x text-success mb-3"></i>
+                                <h5 id="fileName"></h5>
+                                <p class="text-muted" id="fileSize"></p>
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearFile()">
+                                    <i class="fas fa-times me-1"></i>
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                        {% if form.csr_file.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.csr_file.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Supported formats: .csr, .pem (Maximum size: 16MB)
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-primary btn-lg", id="submitBtn") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Process Information -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-cogs me-2"></i>
+                    Certificate Generation Process
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <div class="process-step">
+                            <div class="step-number">1</div>
+                            <h6>Upload CSR</h6>
+                            <p class="text-muted small">Upload your Certificate Signing Request</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="process-step">
+                            <div class="step-number">2</div>
+                            <h6>Generate SAN</h6>
+                            <p class="text-muted small">Create Subject Alternative Name extension</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="process-step">
+                            <div class="step-number">3</div>
+                            <h6>Sign Certificate</h6>
+                            <p class="text-muted small">Sign with Root CA private key</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="process-step">
+                            <div class="step-number">4</div>
+                            <h6>Create Archive</h6>
+                            <p class="text-muted small">Package certificate and Root CA</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #667eea;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    font-weight: bold;
+}
+
+.process-step {
+    padding: 20px 10px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('file');
+    const uploadContent = document.getElementById('uploadContent');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const form = document.getElementById('certificateForm');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // Drag and drop functionality
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            handleFileSelect();
+        }
+    });
+
+    // Click to upload
+    uploadArea.addEventListener('click', function(e) {
+        if (e.target === uploadArea || e.target.closest('.upload-area')) {
+            fileInput.click();
+        }
+    });
+
+    fileInput.addEventListener('change', handleFileSelect);
+
+    function handleFileSelect() {
+        const file = fileInput.files[0];
+        if (file) {
+            // Validate file type
+            const allowedTypes = ['.csr', '.pem'];
+            const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+            
+            if (!allowedTypes.includes(fileExtension)) {
+                alert('Please select a valid CSR or PEM file.');
+                fileInput.value = '';
+                return;
+            }
+
+            // Validate file size (16MB)
+            if (file.size > 16 * 1024 * 1024) {
+                alert('File size must be less than 16MB.');
+                fileInput.value = '';
+                return;
+            }
+
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            uploadContent.classList.add('d-none');
+            fileInfo.classList.remove('d-none');
+        }
+    }
+
+    function clearFile() {
+        fileInput.value = '';
+        uploadContent.classList.remove('d-none');
+        fileInfo.classList.add('d-none');
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        if (!fileInput.files[0]) {
+            e.preventDefault();
+            alert('Please select a CSR file to upload.');
+            return;
+        }
+
+        // Show loading state
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+        submitBtn.disabled = true;
+    });
+
+    // FQHN validation and domain preview
+    const fqhnInput = document.getElementById('fqhn');
+    fqhnInput.addEventListener('input', function() {
+        const fqhn = this.value.trim();
+        if (fqhn && fqhn.includes('.')) {
+            const parts = fqhn.split('.');
+            if (parts.length >= 3) {
+                const domain = parts.slice(1).join('.');
+                const formText = this.nextElementSibling;
+                formText.innerHTML = `
+                    <i class="fas fa-lightbulb me-1"></i>
+                    Domain extracted: <strong>${domain}</strong> | SAN will include: <strong>${domain}</strong> and <strong>${fqhn}</strong>
+                `;
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
+

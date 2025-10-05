@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  rootca-app:
+    build: .
+    container_name: rootca-certificate-management
+    ports:
+      - "5000:5000"
+    volumes:
+      # Mount Root CA certificate and key files
+      - /etc/mycerts/rootCA.crt:/etc/mycerts/rootCA.crt:ro
+      - /etc/mycerts/rootCA.key:/etc/mycerts/rootCA.key:ro
+      # Mount logs directory for persistence
+      - ./logs:/var/log/rootca
+      # Mount processing directories for data persistence
+      - ./data/csr_uploads:/tmp/csr_uploads
+      - ./data/cert_processing:/tmp/cert_processing
+    environment:
+      - FLASK_ENV=production
+      - PYTHONPATH=/app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/app/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - rootca-network
+
+networks:
+  rootca-network:
+    driver: bridge
+
+volumes:
+  logs:
+  data:

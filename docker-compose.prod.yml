@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  rootca-app:
+    build: .
+    container_name: rootca-certificate-management
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5000:5000"  # Bind to localhost only
+    volumes:
+      # Mount Root CA certificate and key files
+      - /etc/mycerts/rootCA.crt:/etc/mycerts/rootCA.crt:ro
+      - /etc/mycerts/rootCA.key:/etc/mycerts/rootCA.key:ro
+      # Mount logs directory for persistence
+      - ./logs:/var/log/rootca
+      # Mount processing directories for data persistence
+      - ./data/csr_uploads:/tmp/csr_uploads
+      - ./data/cert_processing:/tmp/cert_processing
+    environment:
+      - FLASK_ENV=production
+      - PYTHONPATH=/app
+    healthcheck:
+      test: ["CMD", "/app/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - rootca-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  nginx:
+    image: nginx:alpine
+    container_name: rootca-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/html:/usr/share/nginx/html:ro
+    depends_on:
+      - rootca-app
+    networks:
+      - frontend
+      - rootca-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  frontend:
+    driver: bridge
+  rootca-network:
+    driver: bridge
+    internal: false
+
+volumes:
+  logs:
+  data:

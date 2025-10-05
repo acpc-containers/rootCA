@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Panel - Root CA Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-cogs me-2"></i>
+                    Admin Panel
+                </h4>
+            </div>
+            <div class="card-body">
+                <!-- System Status -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card border-success">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-server me-2"></i>
+                                    System Status
+                                </h6>
+                                <div id="systemStatus">
+                                    <div class="spinner-border spinner-border-sm" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <span class="ms-2">Checking system status...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-info">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-user me-2"></i>
+                                    Current Session
+                                </h6>
+                                <p class="mb-1"><strong>User:</strong> {{ session.user_id }}</p>
+                                <p class="mb-0"><strong>Role:</strong> Admin</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Management -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-users me-2"></i>
+                            User Management
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Username</th>
+                                        <th>Role</th>
+                                        <th>Last Login</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in users %}
+                                    <tr>
+                                        <td>
+                                            <i class="fas fa-user me-2"></i>
+                                            {{ user.username }}
+                                        </td>
+                                        <td>
+                                            {% if user.role == 'admin' %}
+                                                <span class="badge bg-danger">Admin</span>
+                                            {% else %}
+                                                <span class="badge bg-primary">Operator</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if user.last_login %}
+                                                {{ user.last_login }}
+                                            {% else %}
+                                                <span class="text-muted">Never</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-info" onclick="viewUserDetails('{{ user.username }}')">
+                                                <i class="fas fa-eye me-1"></i>
+                                                View
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Information -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            System Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Application Details</h6>
+                                <ul class="list-unstyled">
+                                    <li><strong>Version:</strong> 2.0.0</li>
+                                    <li><strong>Authentication:</strong> Enabled</li>
+                                    <li><strong>Password Protection:</strong> Enabled</li>
+                                    <li><strong>Session Timeout:</strong> 1 hour</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Security Features</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-check text-success me-2"></i>CSRF Protection</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Session Management</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>File Validation</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Concurrent Access Control</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-bolt me-2"></i>
+                            Quick Actions
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2 d-md-block">
+                            <button class="btn btn-outline-primary" onclick="refreshStatus()">
+                                <i class="fas fa-sync-alt me-2"></i>
+                                Refresh Status
+                            </button>
+                            <button class="btn btn-outline-warning" onclick="viewLogs()">
+                                <i class="fas fa-file-alt me-2"></i>
+                                View Logs
+                            </button>
+                            <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function refreshStatus() {
+    fetch('/status')
+        .then(response => response.json())
+        .then(data => {
+            updateSystemStatus(data);
+        })
+        .catch(error => {
+            console.error('Error fetching status:', error);
+            document.getElementById('systemStatus').innerHTML = 
+                '<i class="fas fa-times-circle text-danger me-2"></i>Status check failed';
+        });
+}
+
+function updateSystemStatus(data) {
+    const statusDiv = document.getElementById('systemStatus');
+    const statusIcon = data.status === 'healthy' ? 
+        '<i class="fas fa-check-circle text-success me-2"></i>' : 
+        '<i class="fas fa-times-circle text-danger me-2"></i>';
+    
+    statusDiv.innerHTML = `
+        ${statusIcon}
+        <strong>System Status:</strong> ${data.status}<br>
+        <small class="text-muted">
+            Root CA Cert: ${data.root_ca_cert_exists ? '✓' : '✗'} | 
+            Root CA Key: ${data.root_ca_key_exists ? '✓' : '✗'} | 
+            Upload Folder: ${data.upload_folder_writable ? '✓' : '✗'} | 
+            Processing Folder: ${data.processing_folder_writable ? '✓' : '✗'}
+        </small>
+    `;
+}
+
+function viewUserDetails(username) {
+    alert(`User details for: ${username}\n\nThis feature will be implemented in future versions.`);
+}
+
+function viewLogs() {
+    alert('Log viewer will be implemented in future versions.\n\nCurrent logs are available at: /var/log/rootca/app.log');
+}
+
+// Load system status on page load
+document.addEventListener('DOMContentLoaded', function() {
+    refreshStatus();
+});
+</script>
+{% endblock %}
